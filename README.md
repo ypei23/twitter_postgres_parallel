@@ -105,10 +105,8 @@ Unfortunately, the code is extremely slow,
 so even when run in parallel it is still slower than the batched code.
 
 > **NOTE:**
-> The `tests_normalized_batch_parallel` are currently failing because they depend on the `load_tweets_parallel.sh` script,
-> and this script is currently failing due deadlocks in the `load_tweets_batch.py` script.
-> This test case should pass as soon as that script no longer generates errors.
-> (But that script doesn't need to be fully correct.)
+> The `tests_normalized_batch_parallel` is currently failing because the `load_tweets_parallel.sh` script is not yet implemented.
+> After you use GNU parallel to implement this script, everything should pass.
 
 #### Normalized Data (batched)
 
@@ -178,3 +176,8 @@ Ensure that your runtimes on the lambda server are recorded below.
 | `pg_denormalized`      |                           |                           | 
 
 Then upload a link to your forked github repo on sakai.
+
+> **GRADING NOTE:**
+> It is not enough to just get passing test cases for this assignment in order to get full credit.
+> (It is easy to pass the test cases by just doing everything sequentially.)
+> Instead, you must also implement the parallelism correctly so that the parallel runtimes above are about 10x faster than the sequential runtimes.

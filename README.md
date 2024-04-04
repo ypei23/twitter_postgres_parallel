@@ -1,27 +1,25 @@
+> **WARNING:**
+> It is an academic integrity violation to begin this assignment before submitting the previous assignment.
+> (This assignment contains a solution to the previous assignment.)
+
 # Parallel Twitter in Postgres
 
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized/badge.svg)
+|     | sequential | parallel |
+| --- | ---------- | -------- |
+| normalized (unbatched) | ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized_sequential/badge.svg) | ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized_parallel/badge.svg) |
+| normalized (batched) | ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalizedbatch_sequential/badge.svg) |  ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalizedbatch_parallel/badge.svg) |
+| denormalized | ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_denormalized_sequential/badge.svg) | ![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_denormalized_parallel/badge.svg) |
 
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized_parallel/badge.svg)
-
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized_batch/badge.svg)
-
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_normalized_batch_parallel/badge.svg)
-
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_denormalized/badge.svg)
-
-![](https://github.com/mikeizbicki/twitter_postgres_parallel/workflows/tests_denormalized_parallel/badge.svg)
-
-In this assignment, you will make your data loading into postgres significantly faster using batch loading and parallel loading.
-Notice that many of the test cases above are already passing;
-you will have to ensure that they remain passing as you complete the tasks below.
+In this assignment, you will learn how to load data into postgres much faster using two techniques:
+1. batch loading (i.e. running the INSERT command on more than one row at a time)
+1. and parallel loading.
 
 ## Tasks
 
 ### Setup
 
 1. Fork this repo
-1. Enable github action on your fork
+1. Enable github actions on your fork
 1. Clone the fork onto the lambda server
 1. Modify the `README.md` file so that all the test case images point to your repo
 1. Modify the `docker-compose.yml` to specify valid ports for each of the postgres services
@@ -32,13 +30,29 @@ you will have to ensure that they remain passing as you complete the tasks below
        ```
        with no errors
 
+### The Data
+
+In this project, you will be using more data than in the last homework, but still only a small subset of the full twitter dataset.
+The data is located in the `data` folder.
+Familiarize yourself with the data by running the commands
+```
+$ ls data
+$ du -h data
+$ for file in data/*; do echo "$file" $(unzip -p "$file" | wc -l); done
+```
+
 ### Sequential Data Loading
+
+Notice that the test cases above for the sequential data loading are already passing.
+This section walks you through how to run the sequential data loading code.
+It is very similar to the code from the last homework assignment.
+The main difference is that I've also added the `load_tweets_batch.py` file for you which loads tweets in "batches" (instead of 1 at a time).
 
 Bring up a fresh version of your containers by running the commands:
 ```
 $ docker-compose down
 $ docker volume prune
-$ docker-compose up -d --build
+$ docker-compose up -d
 ```
 
 Run the following command to insert data into each of the containers sequentially.
@@ -89,13 +103,14 @@ Complete the following steps:
    The script should then load this file into the database using the same technique as in the `load_tweets_sequential.sh` file for the denormalized database.
    In particular, you know you've implemented this file correctly if the following bash code correctly loads the database.
    ```
-   for file in $(find data); do
+   for file in data/*; do
        sh load_denormalized.sh $file
    done
    ```
 
 2. Call the `load_denormalized.sh` file using the `parallel` program from within the `load_tweets_parallel.sh` script.
-   You know you've completed this step correctly if the `check_answers.sh` script passes and the test badge turns green.
+
+   You know you've completed this step correctly if the `run_tests.sh` script passes (locally) and the test badge turns green (on the lambda server).
 
 #### Normalized Data (unbatched)
 
@@ -105,7 +120,7 @@ Unfortunately, the code is extremely slow,
 so even when run in parallel it is still slower than the batched code.
 
 > **NOTE:**
-> The `tests_normalized_batch_parallel` is currently failing because the `load_tweets_parallel.sh` script is not yet implemented.
+> The `tests_normalizedbatch_parallel` is currently failing because the `load_tweets_parallel.sh` script is not yet implemented.
 > After you use GNU parallel to implement this script, everything should pass.
 
 #### Normalized Data (batched)
@@ -113,7 +128,7 @@ so even when run in parallel it is still slower than the batched code.
 Parallel loading of the batched data will fail due to deadlocks.
 These deadlocks will cause some of your parallel loading processes to crash.
 So all the data will not get inserted,
-and you will fail the `check_answers.sh` tests.
+and you will fail the `run_tests.sh` tests.
 
 There are two possible ways to fix this.
 The most naive method is to catch the exceptions generated by the deadlocks in python and repeat the failed queries.
@@ -169,7 +184,7 @@ You should notice that parallelism achieves a nearly (but not quite) 10x speedup
 
 Ensure that your runtimes on the lambda server are recorded below.
 
-|                        | elapsed time (sequential) | elapsed time (parallel) |
+|                        | elapsed time (sequential) | elapsed time (parallel)   |
 | -----------------------| ------------------------- | ------------------------- |
 | `pg_normalized`        |                           |                           | 
 | `pg_normalized_batch`  |                           |                           | 
@@ -181,3 +196,4 @@ Then upload a link to your forked github repo on sakai.
 > It is not enough to just get passing test cases for this assignment in order to get full credit.
 > (It is easy to pass the test cases by just doing everything sequentially.)
 > Instead, you must also implement the parallelism correctly so that the parallel runtimes above are about 10x faster than the sequential runtimes.
+> (Again, they should be 10x faster because we are doing 10 files in parallel.)

@@ -20,5 +20,5 @@ jobs:
         docker ps -a
         sleep 20
         sh load_tweets_parallel.sh
-        docker-compose exec -T pg_normalized ./check_answers.sh
+        docker-compose exec -T pg_normalized ./run_tests.sh
 

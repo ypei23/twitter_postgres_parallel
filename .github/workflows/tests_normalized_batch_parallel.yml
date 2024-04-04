@@ -1,4 +1,4 @@
-name: tests_normalized_batch_parallel
+name: tests_normalizedbatch_parallel
 on:
   push:
     branches: ['*']
@@ -20,6 +20,6 @@ jobs:
         docker ps -a
         sleep 20
         sh load_tweets_parallel.sh
-        docker-compose exec -T pg_normalized_batch ./check_answers.sh
+        docker-compose exec -T pg_normalized_batch ./run_tests.sh
 
 

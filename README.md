@@ -120,6 +120,8 @@ The resulting code is much more complicated than the code you wrote for your `lo
 Instead, I am providing it for you.
 You should see that the test cases for `test_normalizedbatch_sequential` are already passing.
 
+#### Verifying Correctness
+
 Your first task is to make the other two sequential tests pass.
 Do this by:
 1. Copying the `load_tweets.py` file from your `twitter_postgres` homework into this repo.
@@ -128,20 +130,19 @@ Do this by:
     You should be able to use the same lines of code as you used in the `load_tweets.sh` file from the previous assignment.
 Once you've done those two steps, verify that the test cases pass by uploading to github and getting green badges.
 
-Bring up a fresh version of your containers by running the commands:
+#### Measuring Runtimes
+
+Once you've verified that the test cases pass, on the lambda server, you should run the following commands to load the data.
 ```
 $ docker-compose down
 $ docker volume prune
 $ docker-compose up -d
-```
-
-Run the following command to insert data into each of the containers sequentially.
-(Note that you will have to modify the ports to match the ports of your `docker-compose.yml` file.)
-```
 $ sh load_tweets_sequential.sh
 ```
-Record the elapsed time in the table in the Submission section below.
-You should notice that batching significantly improves insertion performance speed.
+The `load_tweets_sequential.sh` file reports the runtime of loading data into each of the three databases.
+Record the runtime in the table in the Submission section below.
+You should notice that batching significantly improves insertion performance speed,
+but the denormalized database insertion is still the fastest.
 
 > **NOTE:**
 > The `time` command outputs 3 times:
@@ -169,8 +170,8 @@ You should notice that batching significantly improves insertion performance spe
 
 There are 10 files in `/data` folder of this repo.
 If we process each file in parallel, then we should get a theoretical 10x speed up.
-The file `load_tweets_parallel.sh` will insert the data in parallel and get nearly a 10-fold speedup,
-but there are several changes that you'll have to make first to get this to work.
+The file `load_tweets_parallel.sh` will insert the data in parallel and if you implement it correctly you will observe this speedup.
+There are several changes that you'll have to make to your code to get this to work.
 
 #### Denormalized Data
 
@@ -190,20 +191,32 @@ Complete the following steps:
 
 2. Call the `load_denormalized.sh` file using the `parallel` program from within the `load_tweets_parallel.sh` script.
 
-   You know you've completed this step correctly if the `run_tests.sh` script passes (locally) and the test badge turns green (on the lambda server).
+    The `parallel` program takes a single paramater as input which is the command that it will execute.
+    For each line that it receives in stdin, it will pass that line as an argument to the input command.
+    All of these commands will be run in parallel,
+    and the `parallel` program will terminate once all of the individual commands terminate.
+
+    My solution looks like
+    ```
+    time echo "$files" | parallel ./load_denormalized.sh
+    ```
+    Notice that I also use the `time` command to time the insertion operation.
+    One of the advantages of using the `parallel` command over the `&` operator we used previously is that it is easier to time your parallel computations.
+
+You know you've completed this step correctly if the `run_tests.sh` script passes (locally) and the test badge turns green (on the lambda server).
 
 #### Normalized Data (unbatched)
 
-Parallel loading of the unbatched data should "just work."
+Modify the `load_tweets_parallel.sh` file to load the `pg_normalized` database in parallel following the same procedure above.
+
+Parallel loading of the unbatched data will probably "just work."
 The code in the `load_tweets.py` file is structured so that you never run into deadlocks.
 Unfortunately, the code is extremely slow,
 so even when run in parallel it is still slower than the batched code.
 
-> **NOTE:**
-> The `tests_normalizedbatch_parallel` is currently failing because the `load_tweets_parallel.sh` script is not yet implemented.
-> After you use GNU parallel to implement this script, everything should pass.
-
 #### Normalized Data (batched)
+
+Modify the `load_tweets_parallel.sh` file to load the `pg_normalized_batch` database in parallel following the same procedure above.
 
 Parallel loading of the batched data will fail due to deadlocks.
 These deadlocks will cause some of your parallel loading processes to crash.
@@ -247,8 +260,9 @@ Once you remove these constraints, this will cause downstream errors in both the
 > In a production database where you are responsible for the consistency of your data,
 > you would never want to remove these constraints.
 > In our case, however, we're not responsible for the consistency of the data.
+> The data comes straight from Twitter, and so Twitter is responsible for the data consistency.
 > We want to represent the data exactly how Twitter represents it "upstream",
-> and so Twitter are responsible for ensuring the consistency.
+> and so removing the UNIQUE/FOREIGN KEY constraints is reasonable.
 
 #### Results
 

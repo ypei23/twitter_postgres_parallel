@@ -1,7 +1,3 @@
-> **WARNING:**
-> It is an academic integrity violation to begin this assignment before submitting the previous assignment.
-> (This assignment contains a solution to the previous assignment.)
-
 # Parallel Twitter in Postgres
 
 |     | sequential | parallel |

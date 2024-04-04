@@ -43,10 +43,90 @@ $ for file in data/*; do echo "$file" $(unzip -p "$file" | wc -l); done
 
 ### Sequential Data Loading
 
-Notice that the test cases above for the sequential data loading are already passing.
-This section walks you through how to run the sequential data loading code.
-It is very similar to the code from the last homework assignment.
-The main difference is that I've also added the `load_tweets_batch.py` file for you which loads tweets in "batches" (instead of 1 at a time).
+Notice in the `docker-compose.yml` file there are now three services instead of two.
+The new service `normalized_batch` contains almost the same normalized database schema as the `normalized` service.
+Check the difference by running
+```
+$ diff services/pg_normalized/schema.sql services/pg_normalized_batch/schema.sql -u
+--- services/pg_normalized/schema.sql	2023-03-31 09:17:54.452468311 -0700
++++ services/pg_normalized_batch/schema.sql	2023-03-31 09:17:54.452468311 -0700
+@@ -30,7 +30,7 @@
+     location TEXT,
+     description TEXT,
+     withheld_in_countries VARCHAR(2)[],
+-    FOREIGN KEY (id_urls) REFERENCES urls(id_urls)
++    FOREIGN KEY (id_urls) REFERENCES urls(id_urls) DEFERRABLE INITIALLY DEFERRED
+ );
+
+ /*
+@@ -55,8 +55,8 @@
+     lang TEXT,
+     place_name TEXT,
+     geo geometry,
+-    FOREIGN KEY (id_users) REFERENCES users(id_users),
+-    FOREIGN KEY (in_reply_to_user_id) REFERENCES users(id_users)
++    FOREIGN KEY (id_users) REFERENCES users(id_users) DEFERRABLE INITIALLY DEFERRED,
++    FOREIGN KEY (in_reply_to_user_id) REFERENCES users(id_users) DEFERRABLE INITIALLY DEFERRED
+
+     -- NOTE:
+     -- We do not have the following foreign keys because they would require us
+@@ -71,8 +71,8 @@
+     id_tweets BIGINT,
+     id_urls BIGINT,
+     PRIMARY KEY (id_tweets, id_urls),
+-    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets),
+-    FOREIGN KEY (id_urls) REFERENCES urls(id_urls)
++    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets) DEFERRABLE INITIALLY DEFERRED,
++    FOREIGN KEY (id_urls) REFERENCES urls(id_urls) DEFERRABLE INITIALLY DEFERRED
+ );
+
+
+@@ -80,8 +80,8 @@
+     id_tweets BIGINT,
+     id_users BIGINT,
+     PRIMARY KEY (id_tweets, id_users),
+-    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets),
+-    FOREIGN KEY (id_users) REFERENCES users(id_users)
++    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets) DEFERRABLE INITIALLY DEFERRED,
++    FOREIGN KEY (id_users) REFERENCES users(id_users) DEFERRABLE INITIALLY DEFERRED
+ );
+ CREATE INDEX tweet_mentions_index ON tweet_mentions(id_users);
+
+@@ -89,7 +89,7 @@
+     id_tweets BIGINT,
+     tag TEXT,
+     PRIMARY KEY (id_tweets, tag),
+-    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets)
++    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets) DEFERRABLE INITIALLY DEFERRED
+ );
+ COMMENT ON TABLE tweet_tags IS 'This table links both hashtags and cashtags';
+ CREATE INDEX tweet_tags_index ON tweet_tags(id_tweets);
+@@ -100,8 +100,8 @@
+     id_urls BIGINT,
+     type TEXT,
+     PRIMARY KEY (id_tweets, id_urls),
+-    FOREIGN KEY (id_urls) REFERENCES urls(id_urls),
+-    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets)
++    FOREIGN KEY (id_urls) REFERENCES urls(id_urls) DEFERRABLE INITIALLY DEFERRED,
++    FOREIGN KEY (id_tweets) REFERENCES tweets(id_tweets) DEFERRABLE INITIALLY DEFERRED
+ );
+
+ /*
+```
+You should see that the only differences between these schemas is that the batch version uses the `DEFERRABLE INITIALLY DEFERRED` line.
+The file `load_tweets_batch.py` inserts 1000 tweets at a time in a single INSERT statement.
+This causes consistency errors if the UNIQUE/FOREIGN KEY constraint checks are not deferred until the end of the transaction.
+The resulting code is much more complicated than the code you wrote for your `load_tweets.py` in the last assignment, so I am not making you write it.
+Instead, I am providing it for you.
+You should see that the test cases for `test_normalizedbatch_sequential` are already passing.
+
+Your first task is to make the other two sequential tests pass.
+Do this by:
+1. Copying the `load_tweets.py` file from your `twitter_postgres` homework into this repo.
+    (If you couldn't complete this part of the assignment, for whatever reason, than let me know and I'll give you a working copy.)
+2. Modify the `load_tweets_sequential.sh` file to correctly load the tweets into the `pg_normalized` and `pg_denormalized` databases.
+    You should be able to use the same lines of code as you used in the `load_tweets.sh` file from the previous assignment.
+Once you've done those two steps, verify that the test cases pass by uploading to github and getting green badges.
 
 Bring up a fresh version of your containers by running the commands:
 ```

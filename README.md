@@ -12,7 +12,7 @@ In this assignment, you will learn how to load data into postgres much faster us
 
 You will also get practice doing the type of medium sized refactor on code that you didn't write that is common in industry.
 
-<img src=refactor.jpg width=400px />
+<img src=refactor.jpg width=300px />
 
 ## Tasks
 

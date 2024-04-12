@@ -185,7 +185,7 @@ def _insert_tweets(connection,input_tweets):
             'screen_name':remove_nulls(tweet['user']['screen_name']),
             'name':remove_nulls(tweet['user']['name']),
             'location':remove_nulls(tweet['user']['location']),
-            'urls':tweet['user']['url'],
+            'url':tweet['user']['url'],
             'description':remove_nulls(tweet['user']['description']),
             'protected':tweet['user']['protected'],
             'verified':tweet['user']['verified'],
@@ -284,14 +284,14 @@ def _insert_tweets(connection,input_tweets):
         ########################################
 
         try:
-            urls = tweet['extended_tweet']['entities']['urls']
+            urls = tweet['extended_tweet']['entities']['url']
         except KeyError:
             urls = tweet['entities']['urls']
 
         for url in urls:
             tweet_urls.append({
                 'id_tweets':tweet['id'],
-                'urls':['expanded_url'],
+                'url':['expanded_url'],
                 })
 
         ########################################
